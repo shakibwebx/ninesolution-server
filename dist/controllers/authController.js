@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.logoutUser = exports.verifyToken = exports.loginUser = exports.registerUser = void 0;
+exports.logoutUser = exports.verifyToken = exports.getUserProfile = exports.loginUser = exports.registerUser = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const User_1 = __importDefault(require("../models/User"));
@@ -12,7 +12,7 @@ const config_1 = require("../config");
 // 🔐 Generate JWT Token
 const generateToken = (userId, remember) => {
     const options = {
-        expiresIn: remember ? config_1.config.jwtExpiresRemember : config_1.config.jwtExpiresIn,
+        expiresIn: remember ? parseInt(config_1.config.jwtExpiresRemember) : parseInt(config_1.config.jwtExpiresIn),
     };
     return jsonwebtoken_1.default.sign({ userId }, config_1.config.jwtSecret, options);
 };
@@ -80,15 +80,17 @@ const loginUser = async (req, res) => {
             return res.status(401).json({ message: 'Incorrect password.' });
         }
         const token = generateToken(user._id.toString(), rememberMe);
-        const cookieOptions = {
+        // ✅ Fixed cookie settings (simplified for testing)
+        res.cookie('token', token, {
             httpOnly: true,
-            maxAge: rememberMe ? 7 * 24 * 60 * 60 * 1000 : 30 * 60 * 1000, // 7d or 30min
-            domain: config_1.config.cookieDomain,
             sameSite: 'lax',
-        };
-        res
-            .cookie('token', token, cookieOptions)
-            .json({ message: 'Login successful.' });
+            secure: false,
+            domain: '.ninesolution-client.vercel.app',
+            maxAge: rememberMe ? 7 * 24 * 60 * 60 * 1000 : 1 * 60 * 1000,
+            path: '/',
+        });
+        // 🚨 CRITICAL: ADD THIS LINE TO SEND A RESPONSE
+        res.status(200).json({ message: 'Login successful!', token, user: { id: user._id, username: user.username } });
     }
     catch (error) {
         console.error('Login error:', error);
@@ -96,23 +98,47 @@ const loginUser = async (req, res) => {
     }
 };
 exports.loginUser = loginUser;
-// 🔍 Verify Token Controller
-const verifyToken = async (req, res) => {
-    const token = req.cookies.token;
-    if (!token) {
-        return res.status(401).json({ message: 'No token provided.' });
-    }
+const getUserProfile = async (req, res) => {
     try {
-        const decoded = jsonwebtoken_1.default.verify(token, config_1.config.jwtSecret);
-        const user = await User_1.default.findById(decoded.userId).select('-password');
-        if (!user) {
+        const user = req.user;
+        if (!user)
             return res.status(404).json({ message: 'User not found.' });
-        }
-        res.status(200).json({ user });
+        // Get shops owned by user
+        const shops = await Shop_1.default.find({ owner: user._id }).select('name');
+        res.json({
+            username: user.username,
+            shops: shops.map(shop => shop.name),
+        });
     }
     catch (error) {
-        console.error('Token verification failed:', error);
-        res.status(401).json({ message: 'Invalid or expired token.' });
+        console.error('Error fetching profile:', error);
+        res.status(500).json({ message: 'Server error.' });
+    }
+};
+exports.getUserProfile = getUserProfile;
+// 🔍 Verify Token Controller
+const verifyToken = async (req, res) => {
+    try {
+        const token = req.cookies.token || req.headers.authorization?.split(' ')[1];
+        if (!token) {
+            return res.status(401).json({ success: false, message: 'No token provided.' });
+        }
+        const decoded = jsonwebtoken_1.default.verify(token, config_1.config.jwtSecret);
+        const user = await User_1.default.findById(decoded.userId).select('username email'); // expose only necessary fields
+        if (!user) {
+            return res.status(404).json({ success: false, token, message: 'User not found.' });
+        }
+        return res.status(200).json({
+            success: true,
+            user,
+        });
+    }
+    catch (error) {
+        console.error('Token verification failed:', error.message || error);
+        return res.status(401).json({
+            success: false,
+            message: 'Invalid or expired token.',
+        });
     }
 };
 exports.verifyToken = verifyToken;

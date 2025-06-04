@@ -95,8 +95,8 @@ export const loginUser = async (req: Request, res: Response) => {
       httpOnly: true,
       sameSite: 'lax',
       secure: false,
-      domain: '.localhost',
-      maxAge: rememberMe ? 7 * 24 * 60 * 60 * 1000 : 1 * 60 * 1000,
+      domain: '.ninesolution-client.vercel.app',
+      maxAge: rememberMe ? 7 * 24 * 60 * 60 * 1000 : 30 * 60 * 1000,
       path: '/',
     });
 
