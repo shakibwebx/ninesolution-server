@@ -16,16 +16,21 @@ app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true); // Allow non-browser requests (e.g., curl, Postman)
 
-    const allowedOrigins = ['http://localhost:3000', 'http://127.0.0.1:3000', 'https://ninesolution-client.vercel.app'];
-
-    // Allow any subdomain of localhost (like shop.localhost:3000)
-    const isSubdomainAllowed = /^https?:\/\/([a-z0-9-]+\.)*localhost(:\d+)?$/.test(origin);
-
-    if (allowedOrigins.includes(origin) || isSubdomainAllowed) {
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://127.0.0.1:3000',
+      'https://ninesolution-client.vercel.app',
+    ];
+    
+    const isLocalhostSubdomain = /^https?:\/\/([a-z0-9-]+\.)*localhost(:\d+)?$/i.test(origin);
+    const isVercelSubdomain = /^https:\/\/([a-z0-9-]+\.)*ninesolution-client\.vercel\.app$/i.test(origin);
+    
+    if (allowedOrigins.includes(origin) || isLocalhostSubdomain || isVercelSubdomain) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
     }
+    
   },
   credentials: true,
 }));

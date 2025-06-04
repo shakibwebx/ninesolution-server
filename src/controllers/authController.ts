@@ -93,12 +93,13 @@ export const loginUser = async (req: Request, res: Response) => {
     // ✅ Fixed cookie settings (simplified for testing)
     res.cookie('token', token, {
       httpOnly: true,
-      sameSite: 'lax',
-      secure: false,
-      domain: '.ninesolution-client.vercel.app',
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'none',        // for cross-site cookies
+      domain: '.ninesolution-client.vercel.app', // note the leading dot for subdomains
       maxAge: rememberMe ? 7 * 24 * 60 * 60 * 1000 : 30 * 60 * 1000,
       path: '/',
     });
+    
 
     // 🚨 CRITICAL: ADD THIS LINE TO SEND A RESPONSE
     res.status(200).json({ message: 'Login successful!', token, user: { id: user._id, username: user.username } });
