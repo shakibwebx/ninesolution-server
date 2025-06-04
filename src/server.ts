@@ -16,7 +16,7 @@ app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true); // Allow non-browser requests (e.g., curl, Postman)
 
-    const allowedOrigins = ['http://localhost:3000', 'http://127.0.0.1:3000', 'https://ninesolution-client.vercel.app/'];
+    const allowedOrigins = ['http://localhost:3000', 'http://127.0.0.1:3000', 'https://ninesolution-client.vercel.app'];
 
     // Allow any subdomain of localhost (like shop.localhost:3000)
     const isSubdomainAllowed = /^https?:\/\/([a-z0-9-]+\.)*localhost(:\d+)?$/.test(origin);
