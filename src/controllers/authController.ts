@@ -8,7 +8,7 @@ import { config } from '../config';
 // 🔐 Generate JWT Token
 const generateToken = (userId: string, remember: boolean): string => {
   const options: SignOptions = {
-    expiresIn: remember ? config.jwtExpiresRemember : config.jwtExpiresIn,
+    expiresIn: remember ? parseInt(config.jwtExpiresRemember) : parseInt(config.jwtExpiresIn),
   };
 
   return jwt.sign({ userId }, config.jwtSecret as string, options);
@@ -88,7 +88,7 @@ export const loginUser = async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Incorrect password.' });
     }
 
-    const token = generateToken(user._id.toString(), rememberMe);
+    const token = generateToken((user as { _id: string })._id.toString(), rememberMe);
 
     // ✅ Fixed cookie settings (simplified for testing)
     res.cookie('token', token, {

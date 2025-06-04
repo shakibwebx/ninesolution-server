@@ -14,6 +14,6 @@ router.post('/register', registerUser as RequestHandler);
 router.post('/login', loginUser as RequestHandler);
 router.get('/verify', verifyToken as unknown as RequestHandler);
 router.post('/logout', logoutUser as RequestHandler);
-router.get('/profile', protect, getUserProfile as RequestHandler); // Adjusted type casting
+router.get('/profile', protect as RequestHandler, getUserProfile as RequestHandler); // Adjusted type casting
 
 export default router;
